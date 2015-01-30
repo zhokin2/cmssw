@@ -27,27 +27,27 @@ cms.untracked.vstring('file:/eos/uscms/store/user/dgsheffi/QCD_Pt-120To170_13TeV
 #)
 
 process.DiJetsProd1 = cms.EDProducer("AlCaDiJetsProducer",
-                                      PhoInput = cms.InputTag("photons"),
+                                      #PhoInput = cms.InputTag("photons"),
                                       PFjetInput = cms.InputTag("ak5PFJets"),
                                       HBHEInput = cms.InputTag("hbhereco"),
                                       HFInput = cms.InputTag("hfreco"),
                                       HOInput = cms.InputTag("horeco"),
-                                      METInput = cms.InputTag("pfMet"),
-                                      Type1METInput = cms.InputTag("pfType1CorrectedMet"),
-                                      gsfeleInput = cms.InputTag("gedGsfElectrons"),
+                                      #METInput = cms.InputTag("pfMet"),
+                                      #Type1METInput = cms.InputTag("pfType1CorrectedMet"),
+                                      #gsfeleInput = cms.InputTag("gedGsfElectrons"),
                                       particleFlowInput = cms.InputTag("particleFlow"),
                                       VertexInput = cms.InputTag("offlinePrimaryVertices"),
-                                      ConversionsInput = cms.InputTag("allConversions"),
-                                      rhoInput = cms.InputTag("fixedGridRhoFastjetAll"),
-                                      BeamSpotInput = cms.InputTag("offlineBeamSpot"),
-                                      MinPtJet = cms.double(10.0),
-                                      MinPtPhoton = cms.double(10.0)
+                                      #ConversionsInput = cms.InputTag("allConversions"),
+                                      #rhoInput = cms.InputTag("fixedGridRhoFastjetAll"),
+                                      #BeamSpotInput = cms.InputTag("offlineBeamSpot"),
+                                      MinPtJet = cms.double(10.0)
+                                      #MinPtPhoton = cms.double(10.0)
                                       )
 
 process.DiJetsRecos = cms.OutputModule("PoolOutputModule",
 #    outputCommands = cms.untracked.vstring('drop *', 
 #        'keep *_GammaJetProd_*_*'),
-    fileName = cms.untracked.string('gjet.root')
+    fileName = cms.untracked.string('dijet.root')
 )
 
 #process.p = cms.Path(process.ak5PFJetsCHS*process.GammaJetProd)

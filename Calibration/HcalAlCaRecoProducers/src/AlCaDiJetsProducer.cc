@@ -49,9 +49,11 @@ class AlCaDiJetsProducer : public edm::EDProducer {
   bool select (edm::Handle<reco::PFJetCollection> jt);
   // ----------member data ---------------------------
   
-  edm::InputTag   labelPhoton_, labelPFJet_, labelHBHE_, labelHF_, labelHO_, labelTrigger_, labelPFCandidate_, labelVertex_, labelPFMET_, 
-    labelPFMETtype1_, labelGsfEle_, labelRho_, labelConv_, labelBeamSpot_, labelLoosePhot_, labelTightPhot_;
-  double          minPtJet_, minPtPhoton_;
+  //edm::InputTag   labelPhoton_, labelPFJet_, labelHBHE_, labelHF_, labelHO_, labelTrigger_, labelPFCandidate_, labelVertex_, labelPFMET_, 
+  //labelPFMETtype1_, labelGsfEle_, labelRho_, labelConv_, labelBeamSpot_, labelLoosePhot_, labelTightPhot_;
+  //double          minPtJet_, minPtPhoton_;
+  edm::InputTag   labelPFJet_, labelHBHE_, labelHF_, labelHO_, labelPFCandidate_, labelVertex_;
+  double          minPtJet_;
   int             nAll_, nSelect_;
   
   //edm::EDGetTokenT<reco::PhotonCollection>                                                tok_Photon_; 
