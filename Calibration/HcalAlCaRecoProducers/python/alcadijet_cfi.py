@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
-# producer for alcadijets (HCAL dijets)
-DiJetsProd = cms.EDProducer("AlCaDiJetsProducer",
+# producer for alcadijet (HCAL dijet)
+DiJetProd = cms.EDProducer("AlCaDiJetProducer",
                               PFjetInput = cms.InputTag("ak4PFJetsCHS"),
                               HBHEInput = cms.InputTag("hbhereco"),
                               HFInput = cms.InputTag("hfreco"),
