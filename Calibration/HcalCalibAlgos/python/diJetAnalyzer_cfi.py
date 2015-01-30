@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 diJetAnalyzer = cms.EDAnalyzer(
     'DiJetAnalyzer',
     pfJetCollName       = cms.string('ak4PFJetsCHS'),
-    pfJetCorrName       = cms.string('ak4PFCHSL2L3'),
+    pfJetCorrName       = cms.string('ak4PFCHSL1FastL2L3'),
     hbheRecHitName      = cms.string('hbhereco'),
     hfRecHitName        = cms.string('hfreco'),
     hoRecHitName        = cms.string('horeco'),
