@@ -17,13 +17,15 @@ process.load('JetMETCorrections.Configuration.JetCorrectionProducers_cff')
 # run over files
 
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(
-        'file:/eos/uscms/store/user/dgsheffi/QCD_Pt-120To170_13TeV_0002E63C-FC89-E411-B8D6-003048FFCBA8.root'
+        '/store/relval/CMSSW_7_3_0/RelValQCD_Pt_80_120_13/GEN-SIM-RECO/MCRUN2_73_V9_71XGENSIM_FIXGT-v1/00000/8E758AAA-4DA2-E411-8068-003048FFCB96.root',
+        '/store/relval/CMSSW_7_3_0/RelValQCD_Pt_80_120_13/GEN-SIM-RECO/MCRUN2_73_V9_71XGENSIM_FIXGT-v1/00000/CE0DAE28-56A2-E411-AEFF-003048FFD79C.root',
+        '/store/relval/CMSSW_7_3_0/RelValQCD_Pt_80_120_13/GEN-SIM-RECO/MCRUN2_73_V9_71XGENSIM_FIXGT-v1/00000/D4D21D16-56A2-E411-A0C4-0026189438E2.root'
         ))
 
 #print readFiles
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
-process.MessageLogger.cerr.FwkReport.reportEvery=cms.untracked.int32(100)
+process.MessageLogger.cerr.FwkReport.reportEvery=cms.untracked.int32(1000)
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 # Load pfNoPileUP
