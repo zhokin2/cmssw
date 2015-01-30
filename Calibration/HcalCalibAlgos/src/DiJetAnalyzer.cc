@@ -138,7 +138,8 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 
   JetCorretPair pf_tag, pf_probe;
   pf_thirdjet_px_=pf_thirdjet_py_=0.0;
-  pf_thirdjet_px_uncorr_=pf_thirdjet_py_uncorr_=0.0;
+  pf_realthirdjet_px_=pf_realthirdjet_py_=0.0;
+  pf_realthirdjet_px_ = 1;
   int cntr=0;
   for(std::set<JetCorretPair, JetCorretPairComp>::const_iterator it=pfjetcorretpairset.begin(); it!=pfjetcorretpairset.end(); ++it) {
     JetCorretPair jet=(*it);
@@ -148,6 +149,11 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
     else {
       pf_thirdjet_px_ += jet.scale()*jet.jet()->px();
       pf_thirdjet_py_ += jet.scale()*jet.jet()->py();
+      if(cntr==3){
+	pf_realthirdjet_px_ = jet.jet()->px();
+	pf_realthirdjet_py_ = jet.jet()->py();
+	pf_realthirdjet_scale_ = jet.scale();
+      }
     }
   }
     
@@ -1234,8 +1240,9 @@ void DiJetAnalyzer::beginJob()
   tree_->Branch("pf_dijet_balance",&pf_dijet_balance_, "pf_dijet_balance/F");
   tree_->Branch("pf_thirdjet_px",&pf_thirdjet_px_, "pf_thirdjet_px/F");
   tree_->Branch("pf_thirdjet_py",&pf_thirdjet_py_, "pf_thirdjet_py/F");
-  tree_->Branch("pf_thirdjet_px_uncorr",&pf_thirdjet_px_uncorr_, "pf_thirdjet_px_uncorr/F");
-  tree_->Branch("pf_thirdjet_py_uncorr",&pf_thirdjet_py_uncorr_, "pf_thirdjet_py_uncorr/F");
+  tree_->Branch("pf_realthirdjet_px",&pf_realthirdjet_px_, "pf_realthirdjet_px/F");
+  tree_->Branch("pf_realthirdjet_py",&pf_realthirdjet_py_, "pf_realthirdjet_py/F");
+  tree_->Branch("pf_realthirdjet_scale",&pf_realthirdjet_scale_, "pf_realthirdjet_scale/F");
   tree_->Branch("pf_Run",&pf_Run_, "pf_Run/I");
   tree_->Branch("pf_Lumi",&pf_Lumi_, "pf_Lumi/I");
   tree_->Branch("pf_Event",&pf_Event_, "pf_Event/I");
