@@ -11,9 +11,6 @@ DiJetAnalyzer::DiJetAnalyzer(const edm::ParameterSet& iConfig)
   // set parameters
   pfJetCollName_       = iConfig.getParameter<std::string>("pfJetCollName");
   pfJetCorrName_       = iConfig.getParameter<std::string>("pfJetCorrName");
-  genJetCollName_      = iConfig.getParameter<std::string>("genJetCollName");
-  genParticleCollName_ = iConfig.getParameter<std::string>("genParticleCollName");
-  genEventInfoName_    = iConfig.getParameter<std::string>("genEventInfoName");
   hbheRecHitName_      = iConfig.getParameter<std::string>("hbheRecHitName");
   hfRecHitName_        = iConfig.getParameter<std::string>("hfRecHitName");
   hoRecHitName_        = iConfig.getParameter<std::string>("hoRecHitName");
@@ -26,13 +23,9 @@ DiJetAnalyzer::DiJetAnalyzer(const edm::ParameterSet& iConfig)
   minJetEt_            = iConfig.getParameter<double>("minJetEt");
   maxThirdJetEt_       = iConfig.getParameter<double>("maxThirdJetEt");
   maxJetEMF_           = iConfig.getParameter<double>("maxJetEMF");
-  doGenJets_           = iConfig.getParameter<bool>("doGenJets");
   debug_               = iConfig.getUntrackedParameter<bool>("debug", false);
 
   tok_PFJet_     = consumes<reco::PFJetCollection>(pfJetCollName_);
-  tok_GenJet_    = consumes<std::vector<reco::GenJet> >(genJetCollName_);
-  tok_GenPart_   = consumes<std::vector<reco::GenParticle> >(genParticleCollName_);
-  tok_GenEvInfo_ = consumes<GenEventInfoProduct>(genEventInfoName_);
   tok_HBHE_      = consumes<edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> > >(hbheRecHitName_);
   tok_HF_        = consumes<edm::SortedCollection<HFRecHit,edm::StrictWeakOrdering<HFRecHit> > >(hfRecHitName_);
   tok_HO_        = consumes<edm::SortedCollection<HORecHit,edm::StrictWeakOrdering<HORecHit> > >(hoRecHitName_);
@@ -51,59 +44,24 @@ DiJetAnalyzer::~DiJetAnalyzer()
 void
 DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 { 
-  edm::Handle<std::vector<reco::GenJet>> genjets;
-  edm::Handle<std::vector<reco::GenParticle> > genparticles;
-  if(doGenJets_){
-    // Get GenJets
-    iEvent.getByToken(tok_GenJet_,genjets);
-    if(!genjets.isValid()) {
-      throw edm::Exception(edm::errors::ProductNotFound)
-	<< " could not find GenJet vector named " << genJetCollName_ << ".\n";
-      return;
-    }
-
-    // Get GenParticles
-    iEvent.getByToken(tok_GenPart_,genparticles);
-    if(!genparticles.isValid()) {
-      throw edm::Exception(edm::errors::ProductNotFound)
-	<< " could not find GenParticle vector named " << genParticleCollName_ << ".\n";
-      return;
-    }
-
-    // Get weights
-    edm::Handle<GenEventInfoProduct> genEventInfoProduct;
-    iEvent.getByToken(tok_GenEvInfo_, genEventInfoProduct);
-    if(!genEventInfoProduct.isValid()){
-      throw edm::Exception(edm::errors::ProductNotFound)
-	<< " could not find GenEventInfoProduct named " << genEventInfoName_ << " \n";
-      return;
-    }
-    pf_weight_ = genEventInfoProduct->weight();
+  pf_Run_ = iEvent.id().run();
+  pf_Lumi_ = iEvent.id().luminosityBlock();
+  pf_Event_ = iEvent.id().event();
+  
+  // Get PFJets
+  edm::Handle<reco::PFJetCollection> pfjets;
+  iEvent.getByToken(tok_PFJet_,pfjets);
+  if(!pfjets.isValid()) {
+    throw edm::Exception(edm::errors::ProductNotFound)
+      << " could not find PFJetCollection named " << pfJetCollName_ << ".\n";
+    return;
   }
-
-
-  // Run over PFJets
-
-  //unsigned int debugEvent = 0;
-    
-    pf_Run_ = iEvent.id().run();
-    pf_Lumi_ = iEvent.id().luminosityBlock();
-    pf_Event_ = iEvent.id().event();
-    
-    // Get PFJets
-    edm::Handle<reco::PFJetCollection> pfjets;
-    iEvent.getByToken(tok_PFJet_,pfjets);
-    if(!pfjets.isValid()) {
-      throw edm::Exception(edm::errors::ProductNotFound)
-	<< " could not find PFJetCollection named " << pfJetCollName_ << ".\n";
-      return;
-    }
-
-    // Get RecHits in HB and HE
-    edm::Handle<edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit>>> hbhereco;
-    iEvent.getByToken(tok_HBHE_,hbhereco);
-    if(!hbhereco.isValid()) {
-      throw edm::Exception(edm::errors::ProductNotFound)
+  
+  // Get RecHits in HB and HE
+  edm::Handle<edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit>>> hbhereco;
+  iEvent.getByToken(tok_HBHE_,hbhereco);
+  if(!hbhereco.isValid()) {
+    throw edm::Exception(edm::errors::ProductNotFound)
 	<< " could not find HBHERecHit named " << hbheRecHitName_ << ".\n";
       return;
     }
@@ -161,7 +119,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
     }
     
     // Get jet corrections
-    // Uncomment below
     const JetCorrector* correctorPF = JetCorrector::getJetCorrector(pfJetCorrName_,evSetup);
     
     //////////////////////////////
@@ -175,8 +132,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
     std::set<JetCorretPair, JetCorretPairComp> pfjetcorretpairset;
     for(reco::PFJetCollection::const_iterator it=pfjets->begin(); it!=pfjets->end(); ++it) {
       const reco::PFJet* jet=&(*it);
-      //double jec = 1.0;
-      // Uncomment below
       double jec = correctorPF->correction(*it, iEvent, evSetup);
       pfjetcorretpairset.insert(JetCorretPair(jet, jec));
     }
@@ -254,10 +209,8 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
       tpfjet_had_EcalE_.clear();
       tpfjet_had_rawHcalE_.clear();
       tpfjet_had_emf_.clear();
-      tpfjet_had_E_mctruth_.clear();
       tpfjet_had_id_.clear();
       tpfjet_had_candtrackind_.clear();
-      tpfjet_had_mcpdgId_.clear();
       tpfjet_had_ntwrs_.clear();
       tpfjet_twr_ieta_.clear();
       tpfjet_twr_iphi_.clear();
@@ -284,10 +237,8 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
       ppfjet_had_EcalE_.clear();
       ppfjet_had_rawHcalE_.clear();
       ppfjet_had_emf_.clear();
-      ppfjet_had_E_mctruth_.clear();
       ppfjet_had_id_.clear();
       ppfjet_had_candtrackind_.clear();
-      ppfjet_had_mcpdgId_.clear();
       ppfjet_had_ntwrs_.clear();
       ppfjet_twr_ieta_.clear();
       ppfjet_twr_iphi_.clear();
@@ -359,10 +310,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	}
       }
 
-      /*      if(iEvent.id().event() == debugEvent){
-	std::cout << "Tag eta: " << tpfjet_eta_ << " phi: " << tpfjet_phi_ << std::endl;
-	}*/
-      
       /////////////////////////////////////////////
       // Get PF constituents and fill HCAL towers
       /////////////////////////////////////////////
@@ -394,24 +341,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	    tpfjet_had_ntwrs_.push_back(0);
 	    tpfjet_had_n_++;
 
-	    if(doGenJets_){
-	      float gendr = 99999;
-	      float genE = 0;
-	      int genpdgId = 0;
-	      for(std::vector<reco::GenParticle>::const_iterator itmc = genparticles->begin(); itmc != genparticles->end(); itmc++){
-		if(itmc->status() == 1 && itmc->pdgId() > 100){
-		  double dr = deltaR((*it)->eta(),(*it)->phi(),itmc->eta(),itmc->phi());
-		  if(dr < gendr){
-		    gendr = dr;
-		    genE = itmc->energy();
-		    genpdgId = itmc->pdgId();
-		  }
-		}
-	      }
-	      tpfjet_had_E_mctruth_.push_back(genE);
-	      tpfjet_had_mcpdgId_.push_back(genpdgId);
-	    }
-	    
 	    reco::TrackRef trackRef = (*it)->trackRef();
 	    if(trackRef.isNonnull()){
 	      reco::Track track = *trackRef;
@@ -464,25 +393,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	    tpfjet_had_candtrackind_.push_back(-1);
 	    tpfjet_had_ntwrs_.push_back(0);
 	    tpfjet_had_n_++;
-	    
-	    if(doGenJets_){
-	      float gendr = 99999;
-	      float genE = 0;
-	      int genpdgId = 0;
-	      for(std::vector<reco::GenParticle>::const_iterator itmc = genparticles->begin(); itmc != genparticles->end(); itmc++){
-		if(itmc->status() == 1 && itmc->pdgId() > 100){
-		  double dr = deltaR((*it)->eta(),(*it)->phi(),itmc->eta(),itmc->phi());
-		  if(dr < gendr){
-		    gendr = dr;
-		    genE = itmc->energy();
-		    genpdgId = itmc->pdgId();
-		  }
-		}
-	      }
-	      tpfjet_had_E_mctruth_.push_back(genE);
-	      tpfjet_had_mcpdgId_.push_back(genpdgId);
-	    }
-	    
 	    break;
 	  }
 	case reco::PFCandidate::h_HF:
@@ -497,25 +407,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	    tpfjet_had_candtrackind_.push_back(-1);
 	    tpfjet_had_ntwrs_.push_back(0);
 	    tpfjet_had_n_++;
-	    
-	    if(doGenJets_){
-	      float gendr = 99999;
-	      float genE = 0;
-	      int genpdgId = 0;
-	      for(std::vector<reco::GenParticle>::const_iterator itmc = genparticles->begin(); itmc != genparticles->end(); itmc++){
-		if(itmc->status() == 1 && itmc->pdgId() > 100){
-		  double dr = deltaR((*it)->eta(),(*it)->phi(),itmc->eta(),itmc->phi());
-		  if(dr < gendr){
-		    gendr = dr;
-		    genE = itmc->energy();
-		    genpdgId = itmc->pdgId();
-		  }
-		}
-	      }
-	      tpfjet_had_E_mctruth_.push_back(genE);
-	      tpfjet_had_mcpdgId_.push_back(genpdgId);
-	    }
-	    
 	    break;
 	  }
 	case reco::PFCandidate::egamma_HF:
@@ -530,25 +421,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	    tpfjet_had_candtrackind_.push_back(-1);
 	    tpfjet_had_ntwrs_.push_back(0);
 	    tpfjet_had_n_++;
-
-	    if(doGenJets_){
-	      float gendr = 99999;
-	      float genE = 0;
-	      int genpdgId = 0;
-	      for(std::vector<reco::GenParticle>::const_iterator itmc = genparticles->begin(); itmc != genparticles->end(); itmc++){
-		if(itmc->status() == 1 && itmc->pdgId() > 100){
-		  double dr = deltaR((*it)->eta(),(*it)->phi(),itmc->eta(),itmc->phi());
-		  if(dr < gendr){
-		    gendr = dr;
-		    genE = itmc->energy();
-		    genpdgId = itmc->pdgId();
-		  }
-		}
-	      }
-	      tpfjet_had_E_mctruth_.push_back(genE);
-	      tpfjet_had_mcpdgId_.push_back(genpdgId);
-	    }
-	    
 	    break;
 	  }
 	}
@@ -556,9 +428,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	std::map<int,int> twrietas;
 	float HFHAD_E = 0;
 	float HFEM_E = 0;
-	//int HFHAD_n_ = 0;
-	//int HFEM_n_ = 0;
-	//int HF_type_ = 0;
 	int maxElement=(*it)->elementsInBlocks().size();
 	for(int e=0; e<maxElement; ++e){
 	  // Get elements from block
@@ -808,8 +677,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
       tpfjet_EMfrac_ = 1.0 - tag_had_rawHcalE/(tag_had_rawHcalE + tag_had_EcalE + tpfjet_unkown_E_ + tpfjet_electron_E_ + tpfjet_muon_E_ + tpfjet_photon_E_);
       tpfjet_hadEcalEfrac_ = tag_had_EcalE/(tag_had_rawHcalE + tag_had_EcalE + tpfjet_unkown_E_ + tpfjet_electron_E_ + tpfjet_muon_E_ + tpfjet_photon_E_);
 
-      //if(debug_ && tpfjet_ntwrs_ == 0) std::cout << "no rechits " << iEvent.id().event() << std::endl;
-
       // fill probe jet variables
       ppfjet_pt_    = pf_probe.jet()->pt();
       ppfjet_p_     = pf_probe.jet()->p();
@@ -856,10 +723,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	}
       }
 
-      /*if(iEvent.id().event() == debugEvent){
-	std::cout << "Probe eta: " << ppfjet_eta_ << " phi: " << ppfjet_phi_ << std::endl;
-	}*/
-
       // Get PF constituents and fill HCAL towers
       std::vector<reco::PFCandidatePtr> probeconst=pf_probe.jet()->getPFConstituents();
       for(std::vector<reco::PFCandidatePtr>::const_iterator it=probeconst.begin(); it!=probeconst.end(); ++it){
@@ -886,24 +749,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	    ppfjet_had_ntwrs_.push_back(0);
 	    ppfjet_had_n_++;
 
-	    if(doGenJets_){
-	      float gendr = 99999;
-	      float genE = 0;
-	      int genpdgId = 0;
-	      for(std::vector<reco::GenParticle>::const_iterator itmc = genparticles->begin(); itmc != genparticles->end(); itmc++){
-		if(itmc->status() == 1 && itmc->pdgId() > 100){
-		  double dr = deltaR((*it)->eta(),(*it)->phi(),itmc->eta(),itmc->phi());
-		  if(dr < gendr){
-		    gendr = dr;
-		    genE = itmc->energy();
-		    genpdgId = itmc->pdgId();
-		  }
-		}
-	      }
-	      ppfjet_had_E_mctruth_.push_back(genE);
-	      ppfjet_had_mcpdgId_.push_back(genpdgId);
-	    }
-	    
 	    reco::TrackRef trackRef = (*it)->trackRef();
 	    if(trackRef.isNonnull()){
 	      reco::Track track = *trackRef;
@@ -956,25 +801,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	    ppfjet_had_candtrackind_.push_back(-1);
 	    ppfjet_had_ntwrs_.push_back(0);
 	    ppfjet_had_n_++;
-
-	    if(doGenJets_){
-	      float gendr = 99999;
-	      float genE = 0;
-	      int genpdgId = 0;
-	      for(std::vector<reco::GenParticle>::const_iterator itmc = genparticles->begin(); itmc != genparticles->end(); itmc++){
-		if(itmc->status() == 1 && itmc->pdgId() > 100){
-		  double dr = deltaR((*it)->eta(),(*it)->phi(),itmc->eta(),itmc->phi());
-		  if(dr < gendr){
-		    gendr = dr;
-		    genE = itmc->energy();
-		    genpdgId = itmc->pdgId();
-		  }
-		}
-	      }
-	      ppfjet_had_E_mctruth_.push_back(genE);
-	      ppfjet_had_mcpdgId_.push_back(genpdgId);
-	    }
-	    
 	    break;
 	  }
 	case reco::PFCandidate::h_HF:
@@ -989,25 +815,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	    ppfjet_had_candtrackind_.push_back(-1);
 	    ppfjet_had_ntwrs_.push_back(0);
 	    ppfjet_had_n_++;
-	    
-	    if(doGenJets_){
-	      float gendr = 99999;
-	      float genE = 0;
-	      int genpdgId = 0;
-	      for(std::vector<reco::GenParticle>::const_iterator itmc = genparticles->begin(); itmc != genparticles->end(); itmc++){
-		if(itmc->status() == 1 && itmc->pdgId() > 100){
-		  double dr = deltaR((*it)->eta(),(*it)->phi(),itmc->eta(),itmc->phi());
-		  if(dr < gendr){
-		    gendr = dr;
-		    genE = itmc->energy();
-		    genpdgId = itmc->pdgId();
-		  }
-		}
-	      }
-	      ppfjet_had_E_mctruth_.push_back(genE);
-	      ppfjet_had_mcpdgId_.push_back(genpdgId);
-	    }
-	    
 	    break;
 	  }
 	case reco::PFCandidate::egamma_HF:
@@ -1022,25 +829,6 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
 	    ppfjet_had_candtrackind_.push_back(-1);
 	    ppfjet_had_ntwrs_.push_back(0);
 	    ppfjet_had_n_++;
-
-	    if(doGenJets_){
-	      float gendr = 99999;
-	      float genE = 0;
-	      int genpdgId = 0;
-	      for(std::vector<reco::GenParticle>::const_iterator itmc = genparticles->begin(); itmc != genparticles->end(); itmc++){
-		if(itmc->status() == 1 && itmc->pdgId() > 100){
-		  double dr = deltaR((*it)->eta(),(*it)->phi(),itmc->eta(),itmc->phi());
-		  if(dr < gendr){
-		    gendr = dr;
-		    genE = itmc->energy();
-		    genpdgId = itmc->pdgId();
-		  }
-		}
-	      }
-	      ppfjet_had_E_mctruth_.push_back(genE);
-	      ppfjet_had_mcpdgId_.push_back(genpdgId);
-	    }
-	    
 	    break;
 	  }
 	}
@@ -1291,34 +1079,7 @@ DiJetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& evSetup)
       }
       ppfjet_EMfrac_ = 1.0 - probe_had_rawHcalE/(probe_had_rawHcalE + probe_had_EcalE + ppfjet_unkown_E_ + ppfjet_electron_E_ + ppfjet_muon_E_ + ppfjet_photon_E_);
       ppfjet_hadEcalEfrac_ = probe_had_EcalE/(probe_had_rawHcalE + probe_had_EcalE + ppfjet_unkown_E_ + ppfjet_electron_E_ + ppfjet_muon_E_ + ppfjet_photon_E_);
-      
-      if(doGenJets_){
-	// fill genjet tag/probe variables
-	tpfjet_gendr_ = 99999.;
-	tpfjet_genpt_ = 0;
-	tpfjet_genp_  = 0;
-	ppfjet_gendr_ = 99999.;
-	ppfjet_genpt_ = 0;
-	ppfjet_genp_  = 0;
-	for(std::vector<reco::GenJet>::const_iterator it=genjets->begin(); it!=genjets->end(); ++it){
-	  const reco::GenJet* jet=&(*it);
-	  double dr=deltaR(jet, pf_probe.jet());
-	  if(dr<ppfjet_gendr_) {
-	    ppfjet_gendr_ = dr;
-	    ppfjet_genpt_ = jet->pt();
-	    ppfjet_genp_ = jet->p();
-	    ppfjet_genE_ = jet->energy();
-	  }
-	  dr=deltaR(jet, pf_tag.jet());
-	  if(dr<tpfjet_gendr_) {
-	    tpfjet_gendr_ = dr;
-	    tpfjet_genpt_ = jet->pt();
-	    tpfjet_genp_ = jet->p();
-	    tpfjet_genE_ = jet->energy();
-	  }
-	}
-      }
-      
+            
       // fill dijet variables
       pf_dijet_deta_=std::fabs(std::fabs(pf_tag.jet()->eta())-std::fabs(pf_probe.jet()->eta()));
       pf_dijet_dphi_=pf_tag.jet()->phi()-pf_probe.jet()->phi();
@@ -1352,12 +1113,6 @@ void DiJetAnalyzer::beginJob()
   tree_->Branch("tpfjet_scale",&tpfjet_scale_, "tpfjet_scale/F");
   tree_->Branch("tpfjet_area",&tpfjet_area_, "tpfjet_area/F");
   tree_->Branch("tpfjet_jetID",&tpfjet_jetID_, "tpfjet_jetID/I");
-  if(doGenJets_){
-    tree_->Branch("tpfjet_genpt",&tpfjet_genpt_, "tpfjet_genpt/F");
-    tree_->Branch("tpfjet_genp",&tpfjet_genp_, "tpfjet_genp/F");
-    tree_->Branch("tpfjet_genE",&tpfjet_genE_, "tpfjet_genE/F");
-    tree_->Branch("tpfjet_gendr",&tpfjet_gendr_, "tpfjet_gendr/F");
-  }
   tree_->Branch("tpfjet_unkown_E",&tpfjet_unkown_E_, "tpfjet_unkown_E/F");
   tree_->Branch("tpfjet_electron_E",&tpfjet_electron_E_, "tpfjet_electron_E/F");
   tree_->Branch("tpfjet_muon_E",&tpfjet_muon_E_, "tpfjet_muon_E/F");
@@ -1392,10 +1147,6 @@ void DiJetAnalyzer::beginJob()
   tree_->Branch("tpfjet_had_emf",&tpfjet_had_emf_);
   tree_->Branch("tpfjet_had_id",&tpfjet_had_id_);
   tree_->Branch("tpfjet_had_candtrackind",&tpfjet_had_candtrackind_);
-  if(doGenJets_){
-    tree_->Branch("tpfjet_had_E_mctruth",&tpfjet_had_E_mctruth_);
-    tree_->Branch("tpfjet_had_mcpdgId",&tpfjet_had_mcpdgId_);
-  }
   tree_->Branch("tpfjet_had_ntwrs",&tpfjet_had_ntwrs_);
   tree_->Branch("tpfjet_ntwrs",&tpfjet_ntwrs_, "tpfjet_ntwrs/I");
   tree_->Branch("tpfjet_twr_ieta",&tpfjet_twr_ieta_);
@@ -1428,12 +1179,6 @@ void DiJetAnalyzer::beginJob()
   tree_->Branch("ppfjet_scale",&ppfjet_scale_, "ppfjet_scale/F");
   tree_->Branch("ppfjet_area",&ppfjet_area_, "ppfjet_area/F");
   tree_->Branch("ppfjet_jetID",&ppfjet_jetID_, "ppfjet_jetID/I");
-  if(doGenJets_){
-    tree_->Branch("ppfjet_genpt",&ppfjet_genpt_, "ppfjet_genpt/F");
-    tree_->Branch("ppfjet_genp",&ppfjet_genp_, "ppfjet_genp/F");
-    tree_->Branch("ppfjet_genE",&ppfjet_genE_, "ppfjet_genE/F");
-    tree_->Branch("ppfjet_gendr",&ppfjet_gendr_, "ppfjet_gendr/F");
-  }
   tree_->Branch("ppfjet_unkown_E",&ppfjet_unkown_E_, "ppfjet_unkown_E/F");
   tree_->Branch("ppfjet_electron_E",&ppfjet_electron_E_, "ppfjet_electron_E/F");
   tree_->Branch("ppfjet_muon_E",&ppfjet_muon_E_, "ppfjet_muon_E/F");
@@ -1468,10 +1213,6 @@ void DiJetAnalyzer::beginJob()
   tree_->Branch("ppfjet_had_emf",&ppfjet_had_emf_);
   tree_->Branch("ppfjet_had_id",&ppfjet_had_id_);
   tree_->Branch("ppfjet_had_candtrackind",&ppfjet_had_candtrackind_);
-  if(doGenJets_){
-    tree_->Branch("ppfjet_had_E_mctruth",&ppfjet_had_E_mctruth_);
-    tree_->Branch("ppfjet_had_mcpdgId",&ppfjet_had_mcpdgId_);
-  }
   tree_->Branch("ppfjet_had_ntwrs",&ppfjet_had_ntwrs_);
   tree_->Branch("ppfjet_ntwrs",&ppfjet_ntwrs_, "ppfjet_ntwrs/I");
   tree_->Branch("ppfjet_twr_ieta",&ppfjet_twr_ieta_);
@@ -1505,9 +1246,6 @@ void DiJetAnalyzer::beginJob()
   tree_->Branch("pf_Lumi",&pf_Lumi_, "pf_Lumi/I");
   tree_->Branch("pf_Event",&pf_Event_, "pf_Event/I");
   tree_->Branch("pf_NPV",&pf_NPV_, "pf_NPV/I");
-  if(doGenJets_){    
-    tree_->Branch("pf_weight",&pf_weight_, "pf_weight/F");
-  }
 
   return;
 }  
