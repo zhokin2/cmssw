@@ -22,7 +22,6 @@ DiJetAnalyzer::DiJetAnalyzer(const edm::ParameterSet& iConfig)
   minSumJetEt_         = iConfig.getParameter<double>("minSumJetEt");
   minJetEt_            = iConfig.getParameter<double>("minJetEt");
   maxThirdJetEt_       = iConfig.getParameter<double>("maxThirdJetEt");
-  maxJetEMF_           = iConfig.getParameter<double>("maxJetEMF");
   debug_               = iConfig.getUntrackedParameter<bool>("debug", false);
 
   tok_PFJet_     = consumes<reco::PFJetCollection>(pfJetCollName_);

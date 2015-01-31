@@ -105,7 +105,6 @@ class DiJetAnalyzer : public edm::EDAnalyzer {
   double minSumJetEt_;              // minimum Sum of the tag and probe jet Et
   double minJetEt_;                 // minimum Jet Et
   double maxThirdJetEt_;            // maximum 3rd jet Et
-  double maxJetEMF_;                // maximum EMF of the tag and probe jets
 
   edm::EDGetTokenT<reco::PFJetCollection>           tok_PFJet_;
   edm::EDGetTokenT<edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> > > tok_HBHE_;

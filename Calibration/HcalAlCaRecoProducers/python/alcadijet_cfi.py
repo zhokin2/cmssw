@@ -9,7 +9,7 @@ DiJetProd = cms.EDProducer("AlCaDiJetProducer",
                               #TriggerResults = cms.InputTag("TriggerResults::HLT"),
                               particleFlowInput = cms.InputTag("particleFlow"),
                               VertexInput = cms.InputTag("offlinePrimaryVertices"),
-                              MinPtJet = cms.double(10.0)
+                              MinPtJet = cms.double(20.0)
                               )
 
 

@@ -12,9 +12,8 @@ diJetAnalyzer = cms.EDAnalyzer(
     maxDeltaEta         = cms.double(1.5),
     minTagJetEta        = cms.double(0.0),
     maxTagJetEta        = cms.double(5.0),
-    minSumJetEt         = cms.double(20.),
-    minJetEt            = cms.double(10.),
-    maxThirdJetEt       = cms.double(100.),
-    maxJetEMF           = cms.double(0.9),
+    minSumJetEt         = cms.double(50.),
+    minJetEt            = cms.double(20.),
+    maxThirdJetEt       = cms.double(75.),
     debug               = cms.untracked.bool(False)
     )
