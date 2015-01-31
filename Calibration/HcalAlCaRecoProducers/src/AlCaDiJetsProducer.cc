@@ -37,10 +37,10 @@
 // class declaration
 //
 
-class AlCaDiJetProducer : public edm::EDProducer {
+class AlCaDiJetsProducer : public edm::EDProducer {
  public:
-  explicit AlCaDiJetProducer(const edm::ParameterSet&);
-  ~AlCaDiJetProducer();
+  explicit AlCaDiJetsProducer(const edm::ParameterSet&);
+  ~AlCaDiJetsProducer();
   virtual void beginJob() ;
   virtual void produce(edm::Event &, const edm::EventSetup&);
   virtual void endJob();
@@ -62,7 +62,7 @@ class AlCaDiJetProducer : public edm::EDProducer {
   edm::EDGetTokenT<reco::VertexCollection>                                                tok_Vertex_;
 };
 
-AlCaDiJetProducer::AlCaDiJetProducer(const edm::ParameterSet& iConfig) : nAll_(0), nSelect_(0) {
+AlCaDiJetsProducer::AlCaDiJetsProducer(const edm::ParameterSet& iConfig) : nAll_(0), nSelect_(0) {
    // Take input 
   labelPFJet_      = iConfig.getParameter<edm::InputTag>("PFjetInput");
   labelHBHE_       = iConfig.getParameter<edm::InputTag>("HBHEInput");
@@ -91,28 +91,28 @@ AlCaDiJetProducer::AlCaDiJetProducer(const edm::ParameterSet& iConfig) : nAll_(0
   produces<reco::VertexCollection>(labelVertex_.encode()); 
 }
 
-AlCaDiJetProducer::~AlCaDiJetProducer() { }
+AlCaDiJetsProducer::~AlCaDiJetsProducer() { }
 
-void AlCaDiJetProducer::beginJob() { }
+void AlCaDiJetsProducer::beginJob() { }
 
-void AlCaDiJetProducer::endJob() {
-  edm::LogInfo("AlcaDiJet") << "Accepts " << nSelect_ << " events from a total of " << nAll_ << " events";
+void AlCaDiJetsProducer::endJob() {
+  edm::LogInfo("AlcaDiJets") << "Accepts " << nSelect_ << " events from a total of " << nAll_ << " events";
 }
 
-bool AlCaDiJetProducer::select (reco::PFJetCollection jt) {
+bool AlCaDiJetsProducer::select (reco::PFJetCollection jt) {
   if (jt.size()<2) return false;
   if (((jt.at(0)).pt())<minPtJet_)    return false;
   return true;
 }
 // ------------ method called to produce the data  ------------
-void AlCaDiJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void AlCaDiJetsProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   nAll_++;
 
   // Access the collections from iEvent
   edm::Handle<reco::PFJetCollection> pfjet;
   iEvent.getByToken(tok_PFJet_,pfjet);
   if (!pfjet.isValid()) {
-    edm::LogWarning("AlCaDiJet") << "AlCaDiJetProducer: Error! can't get product " << labelPFJet_;
+    edm::LogWarning("AlCaDiJets") << "AlCaDiJetsProducer: Error! can't get product " << labelPFJet_;
     return ;
   }
   const reco::PFJetCollection pfjets = *(pfjet.product());
@@ -120,7 +120,7 @@ void AlCaDiJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
   edm::Handle<reco::PFCandidateCollection> pfc;
   iEvent.getByToken(tok_PFCand_,pfc);
   if (!pfc.isValid()) {
-    edm::LogWarning("AlCaDiJet") << "AlCaDiJetProducer: Error! can't get product " << labelPFCandidate_;
+    edm::LogWarning("AlCaDiJets") << "AlCaDiJetsProducer: Error! can't get product " << labelPFCandidate_;
     return ;
   }
   const reco::PFCandidateCollection pfcand = *(pfc.product());
@@ -128,7 +128,7 @@ void AlCaDiJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
   edm::Handle<reco::VertexCollection> vt;
   iEvent.getByToken(tok_Vertex_,vt);
   if (!vt.isValid()) {
-    edm::LogWarning("AlCaDiJet") << "AlCaDiJetProducer: Error! can't get product " << labelVertex_;
+    edm::LogWarning("AlCaDiJets") << "AlCaDiJetsProducer: Error! can't get product " << labelVertex_;
     return ;
   }
   const reco::VertexCollection vtx = *(vt.product());
@@ -136,7 +136,7 @@ void AlCaDiJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
   edm::Handle<edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> > > hbhe;
   iEvent.getByToken(tok_HBHE_,hbhe);
   if (!hbhe.isValid()) {
-    edm::LogWarning("AlCaDiJet") << "AlCaDiJetProducer: Error! can't get product " << labelHBHE_;
+    edm::LogWarning("AlCaDiJets") << "AlCaDiJetsProducer: Error! can't get product " << labelHBHE_;
     return ;
   }
   const edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> > Hithbhe = *(hbhe.product());
@@ -144,7 +144,7 @@ void AlCaDiJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
   edm::Handle<edm::SortedCollection<HORecHit,edm::StrictWeakOrdering<HORecHit> > > ho;
   iEvent.getByToken(tok_HO_,ho);
   if(!ho.isValid()) {
-    edm::LogWarning("AlCaDiJet") << "AlCaDiJetProducer: Error! can't get product " << labelHO_;
+    edm::LogWarning("AlCaDiJets") << "AlCaDiJetsProducer: Error! can't get product " << labelHO_;
     return ;
   }
   const edm::SortedCollection<HORecHit,edm::StrictWeakOrdering<HORecHit> > Hitho = *(ho.product());
@@ -152,7 +152,7 @@ void AlCaDiJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
   edm::Handle<edm::SortedCollection<HFRecHit,edm::StrictWeakOrdering<HFRecHit> > > hf;
   iEvent.getByToken(tok_HF_,hf);
   if(!hf.isValid()) {
-    edm::LogWarning("AlCaDiJet") << "AlCaDiJetProducer: Error! can't get product " << labelHF_;
+    edm::LogWarning("AlCaDiJets") << "AlCaDiJetsProducer: Error! can't get product " << labelHF_;
     return ;
   }
   const edm::SortedCollection<HFRecHit,edm::StrictWeakOrdering<HFRecHit> > Hithf = *(hf.product());
@@ -212,4 +212,4 @@ void AlCaDiJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 
 }
 
-DEFINE_FWK_MODULE(AlCaDiJetProducer); 
+DEFINE_FWK_MODULE(AlCaDiJetsProducer); 

@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("MYDIJET")
+process = cms.Process("MYDIJETS")
 
 process.load("Configuration.Geometry.GeometryIdeal_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
@@ -23,13 +23,13 @@ process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(
         '/store/relval/CMSSW_7_3_0/RelValQCD_Pt_80_120_13/GEN-SIM-RECO/MCRUN2_73_V9_71XGENSIM_FIXGT-v1/00000/D4D21D16-56A2-E411-A0C4-0026189438E2.root'
 ))
 
-process.load("Calibration.HcalAlCaRecoProducers.alcadijet_cfi")
+process.load("Calibration.HcalAlCaRecoProducers.alcadijets_cfi")
 
-process.DiJetRecos = cms.OutputModule("PoolOutputModule",
+process.DiJetsRecos = cms.OutputModule("PoolOutputModule",
 #    outputCommands = cms.untracked.vstring('drop *', 
 #        'keep *_GammaJetProd_*_*'),
     fileName = cms.untracked.string('dijets.root')
 )
 
-process.p = cms.Path(process.DiJetProd)
-process.e = cms.EndPath(process.DiJetRecos)
+process.p = cms.Path(process.DiJetsProd)
+process.e = cms.EndPath(process.DiJetsRecos)
